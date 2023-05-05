@@ -64,49 +64,62 @@ class Program
             Console.WriteLine(p);
         }
 
-        Console.WriteLine("Entrez votre commande de pizzas sous la forme 'A nom_pizza1, B nom_pizza2, C nom_pizza3 ...'");
-        string input = Console.ReadLine();
+        bool exit = false;
 
-        // Créer une liste pour stocker les commandes
-        Dictionary<string, int> orders = new Dictionary<string, int>();
-
-        // Analyser la commande de l'utilisateur
-        foreach (string order in input.Split(','))
+        while (!exit)
         {
-            string[] parts = order.Trim().Split(' ');
-            if (parts.Length != 2 || !int.TryParse(parts[0], out int quantity))
-            {
-                Console.WriteLine($"Commande invalide : {order}");
-                return;
-            }
-            string pizzaName = parts[1];
-            if (!pizzas.ContainsKey(pizzaName))
-            {
-                Console.WriteLine($"Désolé, nous ne proposons pas la pizza {pizzaName}.");
-                return;
-            }
 
-            if (orders.ContainsKey(pizzaName))
+            Console.WriteLine("Entrez votre commande de pizzas sous la forme 'A nom_pizza1, B nom_pizza2, C nom_pizza3 ... ou EXIT pour quitter'");
+            string input = Console.ReadLine();
+
+            if (input.ToLower() == "exit")
             {
-                orders[pizzaName] += quantity;
+                exit = true;
             }
             else
             {
-                orders.Add(pizzaName, quantity);
+                // Créer une liste pour stocker les commandes
+                Dictionary<string, int> orders = new Dictionary<string, int>();
+
+                // Analyser la commande de l'utilisateur
+                foreach (string order in input.Split(','))
+                {
+                    string[] parts = order.Trim().Split(' ');
+                    if (parts.Length != 2 || !int.TryParse(parts[0], out int quantity))
+                    {
+                        Console.WriteLine($"Commande invalide : {order}");
+                        continue;
+                    }
+                    string pizzaName = parts[1];
+                    if (!pizzas.ContainsKey(pizzaName))
+                    {
+                        Console.WriteLine($"Désolé, nous ne proposons pas la pizza {pizzaName}.");
+                        continue;
+                    }
+
+                    if (orders.ContainsKey(pizzaName))
+                    {
+                        orders[pizzaName] += quantity;
+                    }
+                    else
+                    {
+                        orders.Add(pizzaName, quantity);
+                    }
+                }
+
+                displayBill(orders);
+
+                Console.WriteLine("------------------------");
+                foreach (KeyValuePair<string, int> order in orders)
+                {
+                    Console.WriteLine(order.Key);
+                    displayInstructions(pizzas[order.Key]);
+                    Console.WriteLine();
+                }
+                Console.WriteLine("------------------------");
             }
         }
-
-        displayBill(orders);
-
-        Console.WriteLine("------------------------");
-        foreach (KeyValuePair<string, int> order in orders)
-        {
-            Console.WriteLine(order.Key);
-            displayInstructions(pizzas[order.Key]);
-            Console.WriteLine();
-        }
-        Console.WriteLine("------------------------");
-
+        Console.WriteLine("Merci d'avoir commandé chez nous !");
         Console.WriteLine("Appuyez sur une touche pour quitter.");
         Console.ReadKey();
     }
