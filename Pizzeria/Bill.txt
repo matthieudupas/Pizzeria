@@ -1,0 +1,12 @@
+4 4 saisons : 4 * 9 €
+tomate 150 Grammes
+mozarella 125 Grammes
+jambon 2 Tranches
+poivron 0,5 Unités
+olive 1 Poignées
+Prix total : 36€
+tomate 600 Grammes
+mozarella 500 Grammes
+jambon 8 Tranches
+poivron 2,0 Unités
+olive 4 Poignées

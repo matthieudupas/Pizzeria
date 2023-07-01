@@ -1,75 +1,72 @@
-﻿
-using System.Text;
-using Pizzeria;
+﻿using Pizzeria;
 
 class Program
 {
-    // Définition des pizzas
-    static Pizza regina = new Pizza("Regina", new Dictionary<string, (decimal Quantity, string Unit)> {
-            { "Tomate", (150m, "g") },
-            { "Mozzarella", (125m, "g") },
-            { "Fromage râpé", (100m, "g") },
-            { "Jambon", (2m, "tranches") },
-            { "Champignon", (4m, "") },
-            { "Huile d'olive", (2m, "Cuillères") }
-        }, 8);
-
-    static Pizza vegetarian = new Pizza("Végétarienne", new Dictionary<string, (decimal Quantity, string Unit)> {
-            { "Tomate", (150m, "g") },
-            { "Mozzarella", (100m, "g") },
-            { "Courgette", (0.5m, "") },
-            { "Poivron jaune", (1m, "") },
-            { "Tomate cerise", (6m, "") },
-            { "Olive", (5m, "") }
-        }, 7.5m);
-
-    static Dictionary<string, Pizza> pizzas = new Dictionary<string, Pizza> { { "Regina", regina }, { "Végétarienne", vegetarian } };
-
-    static void displayBill(Dictionary<string, int> orders)
-    {
-        decimal prixTotal = 0m;
-        Console.WriteLine("------------------------");
-        foreach (KeyValuePair<string, int> order in orders)
-        {
-            Pizza pizza = pizzas[order.Key];
-            prixTotal += pizza.Price * order.Value;
-            Console.WriteLine($"{order.Value} {pizza.Name} : {order.Value} * {pizza.Price:C}");
-            foreach (KeyValuePair<string, (decimal, String)> ingredient in pizza.Ingredients)
-            {
-                Console.WriteLine($"{ingredient.Key} {ingredient.Value.Item1 * order.Value} {ingredient.Value.Item2}");
-            }
-
-        }
-        Console.WriteLine($"Prix total {prixTotal:C}");
-        Console.WriteLine("------------------------");
-    }
-
-    static void displayInstructions(Pizza pizza)
-    {
-        Console.WriteLine("Préparer la pâte");
-        foreach (KeyValuePair<string, (decimal, String)> ingredient in pizza.Ingredients)
-        {
-            Console.WriteLine($"Ajouter {ingredient.Key}");
-        }
-        Console.WriteLine("Cuire la pizza");
-    }
-
     static void Main(string[] args)
     {
-        // Demander à l'utilisateur de saisir sa commande de pizza
-        Console.WriteLine("Bienvenue chez PizzaExpress !");
-        Console.WriteLine("Voici nos pizzas disponibles :");
-        foreach (Pizza p in pizzas.Values)
-        {
-            Console.WriteLine(p);
-        }
+        DisplayScreen displayScreen = new DisplayScreen();
+        DisplayFile displayFile = new DisplayFile(@"Bill.txt");
+
+        Display.GetInstance().Mode = displayFile;
+
+        Ingredient tomate = new Ingredient("tomate", Units.Grammes);
+        Ingredient tomate_cerise = new Ingredient("tomate cerise", Units.Unites);
+        Ingredient mozarella = new Ingredient("mozarella", Units.Grammes);
+        Ingredient jambon = new Ingredient("jambon", Units.Tranches);
+        Ingredient champignon = new Ingredient("champignon", Units.Grammes);
+        Ingredient courgette = new Ingredient("courgette", Units.Unites);
+        Ingredient poivron = new Ingredient("poivron", Units.Unites);
+        Ingredient olive = new Ingredient("olive", Units.Poignees);
+
+        tomate.Register(PizzaManager.GetInstance());
+        tomate_cerise.Register(PizzaManager.GetInstance());
+        mozarella.Register(PizzaManager.GetInstance());
+        jambon.Register(PizzaManager.GetInstance());
+        champignon.Register(PizzaManager.GetInstance());
+        courgette.Register(PizzaManager.GetInstance());
+        poivron.Register(PizzaManager.GetInstance());
+        olive.Register(PizzaManager.GetInstance());
+
+        tomate.AddStock(1000);
+        tomate_cerise.AddStock(1000);
+        champignon.AddStock(10000);
+        courgette.AddStock(100000);
+        poivron.AddStock(1000000);
+        olive.AddStock(1000000);
+        mozarella.AddStock(1000);
+        jambon.AddStock(1000);
+
+        Pizza pizza_4_saisons = new Pizza("4 saisons");
+        pizza_4_saisons.AddIngredient(tomate, 150);
+        pizza_4_saisons.AddIngredient(mozarella, 125);
+        pizza_4_saisons.AddIngredient(jambon, 2);
+        pizza_4_saisons.AddIngredient(poivron, 0.5m);
+        pizza_4_saisons.AddIngredient(olive, 1);
+        pizza_4_saisons.Price = 9;
+        PizzaManager.GetInstance().Register(pizza_4_saisons);
+
+        Pizza pizza_vegetarienne = new Pizza("Végétarienne");
+        pizza_vegetarienne.AddIngredient(tomate, 150);
+        pizza_vegetarienne.AddIngredient(mozarella, 100);
+        pizza_vegetarienne.AddIngredient(courgette, 0.5m);
+        pizza_vegetarienne.AddIngredient(poivron, 1);
+        pizza_vegetarienne.AddIngredient(tomate_cerise, 6);
+        pizza_vegetarienne.AddIngredient(olive, 3);
+        pizza_vegetarienne.Price = 7.5m;
+        PizzaManager.GetInstance().Register(pizza_vegetarienne);
+
+        RootExpression expression = new RootExpression();
+
+        Display.GetInstance().DisplayWelcomeMessage();
+
+        PizzaManager.GetInstance().Menu();
 
         bool exit = false;
 
         while (!exit)
         {
+            Display.GetInstance().DisplayCommand();
 
-            Console.WriteLine("Entrez votre commande de pizzas sous la forme 'A nom_pizza1, B nom_pizza2, C nom_pizza3 ... ou EXIT pour quitter'");
             string input = Console.ReadLine();
 
             if (input.ToLower() == "exit")
@@ -78,49 +75,29 @@ class Program
             }
             else
             {
-                // Créer une liste pour stocker les commandes
-                Dictionary<string, int> orders = new Dictionary<string, int>();
-
-                // Analyser la commande de l'utilisateur
-                foreach (string order in input.Split(','))
+                try
                 {
-                    string[] parts = order.Trim().Split(' ');
-                    if (parts.Length != 2 || !int.TryParse(parts[0], out int quantity))
+                    try
                     {
-                        Console.WriteLine($"Commande invalide : {order}");
-                        continue;
+                        expression.Interpret(input);
                     }
-                    string pizzaName = parts[1];
-                    if (!pizzas.ContainsKey(pizzaName))
+                    catch (Exception)
                     {
-                        Console.WriteLine($"Désolé, nous ne proposons pas la pizza {pizzaName}.");
-                        continue;
+                        Console.WriteLine("Syntax incorrect ");
                     }
 
-                    if (orders.ContainsKey(pizzaName))
-                    {
-                        orders[pizzaName] += quantity;
-                    }
-                    else
-                    {
-                        orders.Add(pizzaName, quantity);
-                    }
+                    BillVisitor billVisitor = new BillVisitor();
+                    expression.Accept(billVisitor);
+                    CookVisitor cookVisitor = new CookVisitor();
+                    expression.Accept(cookVisitor);
+                    IngredientVisitor ingredientVisitor = new IngredientVisitor();
+                    expression.Accept(ingredientVisitor);
                 }
-
-                displayBill(orders);
-
-                Console.WriteLine("------------------------");
-                foreach (KeyValuePair<string, int> order in orders)
+                catch (Exception)
                 {
-                    Console.WriteLine(order.Key);
-                    displayInstructions(pizzas[order.Key]);
-                    Console.WriteLine();
+                    Console.WriteLine("Saisie incorrect ");
                 }
-                Console.WriteLine("------------------------");
             }
         }
-        Console.WriteLine("Merci d'avoir commandé chez nous !");
-        Console.WriteLine("Appuyez sur une touche pour quitter.");
-        Console.ReadKey();
     }
 }
